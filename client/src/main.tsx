@@ -7,13 +7,12 @@ const playerO:string = "Bob"
 const firstPlayer:XorO = 'X'
 
 export const Main = () => {
+  const [boardSize, setBoardSize] = useState(3)
   const [currentPlayer, setCurrentPlayer] = useState<XorO>(firstPlayer)
   const [gameStatus, setGameStatus] = useState<GameStatus>({ status: 'playing' })
-  const [board, setBoard] = useState<Board>([
-    [undefined, undefined, undefined],
-    [undefined, undefined, undefined],
-    [undefined, undefined, undefined]
-  ])
+  const [board, setBoard] = useState<Board>(
+    Array.from({ length: 3 }, () => Array(3).fill(undefined))
+  )
 
   const getStatusMessage = () => {
     switch (gameStatus.status) {
@@ -46,11 +45,7 @@ export const Main = () => {
   const resetGame = () => {
       setCurrentPlayer(firstPlayer)
       setGameStatus({ status: 'playing' })
-      setBoard([
-        [undefined, undefined, undefined],
-        [undefined, undefined, undefined],
-        [undefined, undefined, undefined]
-      ])
+      setBoard(Array.from({ length: boardSize }, () => Array(boardSize).fill(undefined)))
   }
   
   return <div className='flex flex-col mt-10 items-center gap-10'>
@@ -71,5 +66,17 @@ export const Main = () => {
       </div>)}
     </div>
     <button className='px-4 py-2 bg-gray-900 text-white font-bold rounded hover:bg-gray-700' onClick={resetGame}>Start New Game</button>
+    <label className='flex flex-col items-center gap-4'>
+      <span className='text-sm text-gray-500'>Board size (applied on new game)</span>
+      <select
+        className='border border-gray-300 rounded px-3 py-2'
+        value={boardSize}
+        onChange={e => setBoardSize(Number(e.target.value))}
+      >
+        {Array.from({ length: 13 }, (_, i) => i + 3).map(size => (
+          <option key={size} value={size}>{size} x {size}</option>
+        ))}
+      </select>
+    </label>
   </div>
 }
