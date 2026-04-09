@@ -7,12 +7,12 @@ const router = Router();
 // List all players
 router.get("/", async (_req, res) => {
   const players = await prisma.player.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: { userName: "asc" },
   });
   res.json(players);
 });
 
-// Get leaderboard
+// Get leaderboard by aggregating data in server using TypeScript
 router.get("/leaderboard", async (_req, res) => {
   const players = await prisma.player.findMany({
     include: { games: true },
@@ -28,6 +28,21 @@ router.get("/leaderboard", async (_req, res) => {
 
   stats.sort((a, b) => b.wins - a.wins);
   res.json(stats);
+});
+
+// Get leaderboard using database aggregation for efficiency
+router.get("/leaderboard/queryraw", async (_req, res) => {
+  const stats = await prisma.$queryRaw`
+    SELECT p.id, p."userName",
+      COUNT(CASE WHEN gp.result = 'won' THEN 1 END) AS wins,
+      COUNT(CASE WHEN gp.result = 'lost' THEN 1 END) AS losses,
+      COUNT(CASE WHEN gp.result = 'draw' THEN 1 END) AS draws
+    FROM Player p
+    LEFT JOIN GamePlayer gp ON gp."playerId" = p.id
+    GROUP BY p.id
+    ORDER BY wins DESC
+  `;
+  res.json(JSON.parse(JSON.stringify(stats, (_, v) => typeof v === "bigint" ? Number(v) : v)));
 });
 
 export default router;

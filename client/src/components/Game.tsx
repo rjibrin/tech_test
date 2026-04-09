@@ -46,6 +46,7 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
   // Post game results to db when game ends
   useEffect(() => {
     if (gameStatus.status !== 'win' && gameStatus.status !== 'draw') return
+    // do not post if no players were selected
     if (!playerXId || !playerOId) return
 
     let result: 'x_won' | 'o_won' | 'draw'
