@@ -1,4 +1,4 @@
-import { checkBoard } from '../gameLogic'
+import { checkBoard } from '../lib/gameLogic'
 import { Board } from '../types'
 
 const emptyBoard = (size: number): Board =>

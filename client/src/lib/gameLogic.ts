@@ -1,4 +1,4 @@
-import { Board, GameStatus } from './types'
+import { Board, GameStatus } from '../types'
 
 export const checkBoard = (board: Board): GameStatus => {
   // assumes square board
