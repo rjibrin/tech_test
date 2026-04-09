@@ -31,9 +31,9 @@ This repository contains my solution to the Spruce tech test as described in `BR
   - Table `Player` contains `userName` which is used as unique public identifier.
   - Table `Game` contains non-player specific information on past games. Games which ended prematurely are not stored.
   - Table `GamePlayer` is a join table that links `Game` to `Player` in a many-to-many relationship. Each row represents one player's participation in one game, storing their symbol (X/O) and result (won/lost/draw). This table is queried to compute leaderboard statistics.
-- Leaderboard is computed in two ways:
+- Leaderboard can be computed in two ways:
   - `/api/players/leaderboard` aggregates data in the server using TypeScript. The client calls this endpoint.
-  - `/api/players/leaderboard/queryraw` uses SQL to efficiently aggregate data in the database. Leads to substantial speedup on large databases such as `prisma/largeSeed.ts`.
+  - `/api/players/leaderboard/queryraw` uses SQL to efficiently aggregate data in the database. Leads to substantial speedup on large databases such as `prisma/largeSeed.ts`. The client does not call this endpoint; it was only created to benchmark performance.
 
 ### Client
 
@@ -50,7 +50,7 @@ This repository contains my solution to the Spruce tech test as described in `BR
 Here are some directions I considered but did not implement to keep the scope focused:
 
 - **UI library**: Use a UI library for more polished design and advanced components such as dialogs
-- **Leaderboard features**: Add sorting by different metrics, pagination, and search
+- **Leaderboard features**: Add sorting, pagination, and search
 - **Form validation**: Use a declarative form library on the client side
-- **Client-side routing**: Facilitate design of complex navigation between pages
 - **API type safety**: Implement end-to-end type safety between client and server
+- **Client-side routing**: Facilitates design of navigation between pages
