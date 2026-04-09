@@ -6,28 +6,19 @@ const firstPlayer:XorO = 'X'
 
 export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
   const [players, setPlayers] = useState<Player[]>([])
-  const [playerXId, setPlayerXId] = useState<number | ''>('')
-  const [playerOId, setPlayerOId] = useState<number | ''>('')
+  const [playerXId, setPlayerXId] = useState<Player["id"]|undefined>(undefined)
+  const [playerOId, setPlayerOId] = useState<Player["id"]|undefined>(undefined)
   const [boardSize, setBoardSize] = useState<number>(3)
   const [currentPlayer, setCurrentPlayer] = useState<XorO>(firstPlayer)
   const [gameStatus, setGameStatus] = useState<GameStatus>({ status: 'stopped' })
   const [board, setBoard] = useState<Board>(Array.from({ length: 3 }, () => Array(3).fill(undefined)))
 
-  useEffect(() => {
-    fetch('http://localhost:3000/api/players')
-      .then(res => res.json())
-      .then((data: Player[]) => {
-        setPlayers(data)
-        if (data.length > 0) setPlayerXId(data[0].id)
-        if (data.length > 1) setPlayerOId(data[1].id)
-      })
-  }, [])
-
-  const getPlayerName = (id: number | '') => players.find(p => p.id === id)?.userName || 'Unknown'
+  // fallback allows offline playing if players cannot be fetched
+  const getPlayerName = (id: Player["id"] | undefined, fallback: string) => players.find(p => p.id === id)?.userName || fallback
 
   const getStatusMessage = useMemo(() => {
-    const playerXName = getPlayerName(playerXId)
-    const playerOName = getPlayerName(playerOId)
+    const playerXName = getPlayerName(playerXId, 'Player X')
+    const playerOName = getPlayerName(playerOId, 'Player O')
     switch (gameStatus.status) {
       case 'playing': return `${currentPlayer === 'X' ? playerXName +"'s turn (X)" : playerOName +"'s turn (O)"}`
       case 'win': return `${gameStatus.winner === 'X' ? playerXName : playerOName} wins!`
@@ -36,7 +27,23 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
     }
   }, [gameStatus])
 
-  // Save game result when it ends
+  // Fetch players on mount
+  useEffect(() => {
+    fetch('http://localhost:3000/api/players')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch players')
+        return res.json()
+      })
+      .then((data: Player[]) => {
+        setPlayers(data)
+        if (data.length > 0) setPlayerXId(data[0].id)
+        if (data.length > 1) setPlayerOId(data[1].id)
+      })
+      // left for application monitoring
+      .catch(console.error)
+  }, [])
+
+  // Post game results to db when game ends
   useEffect(() => {
     if (gameStatus.status !== 'win' && gameStatus.status !== 'draw') return
     if (!playerXId || !playerOId) return
@@ -78,9 +85,9 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
   }
         
   const resetGame = () => {
-      setCurrentPlayer(firstPlayer)
-      setGameStatus({ status: 'playing' })
-      setBoard(Array.from({ length: boardSize }, () => Array(boardSize).fill(undefined)))
+    setCurrentPlayer(firstPlayer)
+    setGameStatus({ status: 'playing' })
+    setBoard(Array.from({ length: boardSize }, () => Array(boardSize).fill(undefined)))
   }
   
   

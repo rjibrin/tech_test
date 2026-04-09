@@ -1,6 +1,5 @@
 ## Server
+create the .env file please
 
 npm install
-npx prisma migrate dev
-npx prisma db seed
 npm run dev

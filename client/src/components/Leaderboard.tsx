@@ -7,12 +7,16 @@ export const Leaderboard = ({ onBack }: { onBack: () => void }) => {
 
   useEffect(() => {
     fetch('http://localhost:3000/api/players/leaderboard')
-      .then(res => res.json())
-      .then(data => {
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch leaderboard')
+        return res.json()
+      })
+      .then((data: PlayerStats[]) => {
         setStats(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      // left for application monitoring
+      .catch(console.error)
   }, [])
 
   return (
