@@ -52,5 +52,5 @@ Here are some directions I considered but did not implement to keep the scope fo
 - **UI library**: Use a UI library for more polished design and advanced components such as dialogs
 - **Leaderboard features**: Add sorting by different metrics, pagination, and search
 - **Form validation**: Use a declarative form library on the client side
-- **API type safety**: Implement end-to-end type safety between client and server, e.g., tRPC
-- **Client-side routing**
+- **Client-side routing**: Facilitate design of complex navigation between pages
+- **API type safety**: Implement end-to-end type safety between client and server
