@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { PlayerResult } from "../../generated/prisma/client";
 
 const router = Router();
 
@@ -20,9 +21,9 @@ router.get("/leaderboard", async (_req, res) => {
   const stats = players.map((player) => ({
     id: player.id,
     userName: player.userName,
-    wins: player.games.filter((g) => g.result === "won").length,
-    losses: player.games.filter((g) => g.result === "lost").length,
-    draws: player.games.filter((g) => g.result === "draw").length,
+    wins: player.games.filter((g) => g.result === PlayerResult.won).length,
+    losses: player.games.filter((g) => g.result === PlayerResult.lost).length,
+    draws: player.games.filter((g) => g.result === PlayerResult.draw).length,
   }));
 
   stats.sort((a, b) => b.wins - a.wins);
