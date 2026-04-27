@@ -4,6 +4,7 @@ import { PlayerStats } from '../types'
 export const Leaderboard = ({ onBack }: { onBack: () => void }) => {
   const [stats, setStats] = useState<PlayerStats[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     fetch('http://localhost:3000/api/players/leaderboard')
@@ -13,10 +14,12 @@ export const Leaderboard = ({ onBack }: { onBack: () => void }) => {
       })
       .then((data: PlayerStats[]) => {
         setStats(data)
-        setLoading(false)
       })
-      // left for application monitoring
-      .catch(console.error)
+      .catch(err => {
+        console.error(err)
+        setError(true)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -24,6 +27,8 @@ export const Leaderboard = ({ onBack }: { onBack: () => void }) => {
       <div className='font-bold text-2xl'>Leaderboard</div>
       {loading ? (
         <div>Loading...</div>
+      ) : error ? (
+        <div>Network error. Please try again later.</div>
       ) : stats.length === 0 ? (
         <div>No games played yet.</div>
       ) : (
