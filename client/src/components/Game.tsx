@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { XorO, Board, GameStatus, Player } from '../types'
 import { checkBoard } from '../lib/gameLogic'
 
@@ -12,20 +12,7 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
   const [currentPlayer, setCurrentPlayer] = useState<XorO>(firstPlayer)
   const [gameStatus, setGameStatus] = useState<GameStatus>({ status: 'stopped' })
   const [board, setBoard] = useState<Board>(Array.from({ length: 3 }, () => Array(3).fill(undefined)))
-
-  // fallback allows offline playing if players cannot be fetched
-  const getPlayerName = (id: Player["id"] | undefined, fallback: string) => players.find(p => p.id === id)?.userName || fallback
-
-  const getStatusMessage = useMemo(() => {
-    const playerXName = getPlayerName(playerXId, 'Player X')
-    const playerOName = getPlayerName(playerOId, 'Player O')
-    switch (gameStatus.status) {
-      case 'playing': return `${currentPlayer === 'X' ? playerXName +"'s turn (X)" : playerOName +"'s turn (O)"}`
-      case 'win': return `${gameStatus.winner === 'X' ? playerXName : playerOName} wins!`
-      case 'draw': return 'Draw!'
-      case 'stopped': return 'Select settings and start new game!'
-    }
-  }, [gameStatus])
+  const [statusMessage, setStatusMessage] = useState<string>('Select settings and start new game!')
 
   // Fetch players on mount
   useEffect(() => {
@@ -44,57 +31,74 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
   }, [])
 
   // Post game results to db when game ends
-  useEffect(() => {
-    if (gameStatus.status !== 'win' && gameStatus.status !== 'draw') return
+  const postGameResult = (incomingStatus: GameStatus) => {
+    if (incomingStatus.status !== 'win' && incomingStatus.status !== 'draw') return
     // do not post if no players were selected
     if (!playerXId || !playerOId) return
 
-    let result: 'x_won' | 'o_won' | 'draw'
-    switch (gameStatus.status) {
-      case 'win':
-        result = gameStatus.winner === 'X' ? 'x_won' : 'o_won'
-        break
-      case 'draw':
-        result = 'draw'
-    }
+    const result = incomingStatus.status === 'win' ? (incomingStatus.winner === 'X' ? 'x_won' : 'o_won') : 'draw'
 
     fetch('http://localhost:3000/api/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ boardSize, playerXId, playerOId, result })
     }).catch(console.error)
-  }, [gameStatus])
+  }
+
+  // fallback allows offline playing if players cannot be fetched
+  const getPlayerName = (id: Player["id"] | undefined, fallback: string) => players.find(p => p.id === id)?.userName || fallback
+
+  const getStatusMessage = (result: GameStatus, nextPlayer?: XorO) => {
+    const playerXName = getPlayerName(playerXId, 'Player X')
+    const playerOName = getPlayerName(playerOId, 'Player O')
+    switch (result.status) {
+      case 'playing': return `${nextPlayer === 'X' ? playerXName +"'s turn (X)" : playerOName +"'s turn (O)"}`
+      case 'win': return `${result.winner === 'X' ? playerXName : playerOName} wins!`
+      case 'draw': return 'Draw!'
+      case 'stopped': return 'Select settings and start new game!'
+    }
+  }
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     // return if cell already taken or game is finished. redundant with button disabled
     if (board[rowIndex][colIndex]) return
     if (gameStatus.status !== 'playing') return
     
-    // implement move
+    // implement move on board
     const newBoard = board.map(row => [...row])
     newBoard[rowIndex][colIndex] = currentPlayer
     setBoard(newBoard)
     
-    // check if someone won, draw, or continue playing
+    // result from move
     const result = checkBoard(newBoard)
     setGameStatus(result)
 
-    // switch player turns if game continues
-    if (result.status === 'playing') {
-      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X')
+    const nextPlayer: XorO = currentPlayer === 'X' ? 'O' : 'X'
+
+    if (result.status === 'win' || result.status === 'draw') {
+      postGameResult(result)
+    } else if (result.status === 'playing') { 
+      setCurrentPlayer(nextPlayer)
     }
+
+    setStatusMessage(getStatusMessage(result, nextPlayer))
   }
         
-  const resetGame = () => {
+  const startGame = () => {
     setCurrentPlayer(firstPlayer)
     setGameStatus({ status: 'playing' })
     setBoard(Array.from({ length: boardSize }, () => Array(boardSize).fill(undefined)))
+    setStatusMessage(getStatusMessage({ status: 'playing' }, firstPlayer))
   }
   
+  const stopGame = () => {
+    setGameStatus({ status: 'stopped' })
+    setStatusMessage('Select settings and start new game!')
+  }
   
   return <div className='flex flex-col mt-10 items-center gap-5'>
     <div className='font-bold text-2xl'>Tic Tac Toe</div>
-    <div>{getStatusMessage}</div>
+    <div>{statusMessage}</div>
     <div className='flex flex-col gap-1'>
       {board.map((row, rowIndex) => <div className='flex gap-1' key={rowIndex}>
         {row.map((cell, colIndex) => 
@@ -113,14 +117,14 @@ export const Game = ({ onLeaderboard }: { onLeaderboard: () => void }) => {
       <button 
         className='px-4 py-2 bg-gray-900 text-white font-bold rounded hover:bg-gray-700 disabled:opacity-50' 
         disabled={gameStatus.status === 'playing'} 
-        onClick={resetGame}
+        onClick={startGame}
       >
         Start Game
       </button>
       <button
         className='px-4 py-2 bg-gray-900 text-white font-bold rounded hover:bg-gray-700 disabled:opacity-50'
         disabled={gameStatus.status !== 'playing'}
-        onClick={() => setGameStatus({ status: 'stopped' })}
+        onClick={stopGame}
       >
         Stop Game
       </button>
